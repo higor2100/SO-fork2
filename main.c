@@ -4,58 +4,60 @@
 #include <sys/types.h> 
 #include <unistd.h> 
 #include <sys/wait.h> 
-#include <string.h> 
-#include <stdlib.h> 
-//gera um número pseudo­randomico real no intervalo [0,1] 
+#include <string.h>
+#include <errno.h> 
+#include <stdlib.h>
+
+//gera um número pseudorandomico, real no intervalo [0,1]
 float realRandon(void){
-	int a = rand()%1000;
-	int b = rand()%1000;
-	if(a>b)return (float)b/a;
-	else return (float)a/b;
+  int a = rand()%1000;
+  int b = rand()%1000;
+  if(a>b) return (float)b/a;
+  else  return (float)a/b;
 }
-//devolve um valor de um cosseno pseudo­randomico
+
+//devolve um valor de um cosseno pseudorandomico
 float coseno(void){
-	int a = rand()%1000;
-	int b = rand()%1000;
-	return ((float)b / ((a*a+b*b)^(1/2)));
+  int a = rand()%1000;
+  int b = rand()%1000;
+  return ((float)b / sqrt(a*a+b*b));
 }
 
-float prob(int total){
-	if((total/2147483647)<=(1/4)) return 0.5;
-	else if((total/2147483647)<=(1/2)) return 0.25;
-	else if((total/2147483647)<=(1-(1/4))) return 0.25/2;
-	else if((total/2147483647)<=(1-(1/8))) return 0.25/4;
-    else return 0.25/8;
-}
+int main(int argc, char  *argv[])
+{
+  float soma = 0;
+  int i, max, count =0;
+  long seed = time(NULL);
+  srand((unsigned)seed);
+  printf("Digite o valor maximo:\n");
+  scanf("%d", &max);
 
+  if(max>1){
+  if(max%2!=0) i = max/2;
+  else i = (max/2)-1;
+  }
+  else{
+    printf("Valor muito pequeno\n");
+    exit(0);
+  }
+  pid_t pid;
+  pid = fork();
+  if(pid<0){
+    printf("Ops, :(\n");
+    perror(argv[0]);
+    exit(errno);
+  }
+  else if(pid==0){
+  int j = 0;
+  for(; j<=i; j++)    if(realRandon() < coseno())  count++;
+  printf("Valor do filho: %f\n", 2.0*(float)j /(1.0*count));
+  }
+  else{
+  wait(NULL);
+  int metade = i;
+  for(; i<max; i++)    if(realRandon() < coseno())  count++;
+  i -= metade;
+  printf("Valor do Pai: %f\n", 2.0*(float)i /(1.0*count));
 
-int main(int argc, int valMax, char *argv[]){
-	pid_t pid;
-
-	float soma = 0;
-	int i, count=0, total;
-	long seed = time(NULL);
-	srand((unsigned)seed);
-
-	i = 0;
-	count = 0;
-	if(i < total){
-	float valorP = prob(total);
-	pid = fork();
-    printf("%d\n",pid);
-		if(pid<0){
-			printf("Ops\n");
-			return 0;
-		}
-		else if(pid==0){
-			valMax += (int)(total*valorP);
-			for(; i < valMax; i++) if(realRandon() < coseno()) count++;
-			i = valMax;
-      main(argc,valMax, NULL);
-			}
-        else{
-          wait(NULL);
-          printf("%f\n", 2.0*(float)i /(1.0*count));
-        }
   }
 }
